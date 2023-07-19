@@ -3,8 +3,8 @@
 """
 Spine export for Inkscape
 
-Export each layer in the current document to individual PNG files and generate
-a Spine JSON file to import.
+Export each selected object in the current document to individual PNG file
+and generate a Spine JSON file to import.
 https://esotericsoftware.com/spine-json-format
 
 Original hosting location:
@@ -41,6 +41,14 @@ class SpineExporter(inkex.EffectExtension):
             help="Path to the export directory",
         )
         self.arg_parser.add_argument(
+            "--skeleton-name",
+            action="store",
+            type=str,
+            dest="skel_name",
+            default=None,
+            help="Name of the exported skeleton",
+        )
+        self.arg_parser.add_argument(
             "--dpi",
             action="store",
             type=float,
@@ -55,25 +63,25 @@ class SpineExporter(inkex.EffectExtension):
             help="Create a Spine JSON file",
         )
         self.arg_parser.add_argument(
-            "--ignore-hidden",
-            type=inkex.Boolean,
-            dest="ignore_hidden",
-            help="Ignore hidden layers",
-        )
-        self.arg_parser.add_argument(
             "--pretty-print",
             type=inkex.Boolean,
             dest="pretty",
             help="Pretty-print the JSON file",
         )
         self.arg_parser.add_argument(
-            "--merge",
-            action="store",
-            type=str,
-            dest="merge",
-            default="",
-            help="Spine JSON file to merge with",
+            "--center-content",
+            type=inkex.Boolean,
+            dest="center_slots",
+            help="Center exported content at zero point",
         )
+        # self.arg_parser.add_argument(
+        #     "--merge",
+        #     action="store",
+        #     type=str,
+        #     dest="merge",
+        #     default="",
+        #     help="Spine JSON file to merge with",
+        # )
 
         # The default root bone
         self.root_bone = {"name": "root"}
@@ -138,29 +146,38 @@ class SpineExporter(inkex.EffectExtension):
         return im.size, bbox
 
     def get_default_struct(self):
-        """
-        If the merge option was specified, attempt to load the given file
-        as JSON and return its contents.
-        Otherwise, return a default Spine structure.
-        """
-        default = self.options.merge
-        if default:
-            try:
-                with open(default, "r") as f:
-                    ret = json.load(f)
-                self.root_bone = ret["bones"][0]
-            except Exception:
-                inkex.errormsg("%r is not a valid Spine JSON file." % (default))
-                raise
-        else:
-            ret = {
-                "skeleton": {},
-                "bones": [self.root_bone],
-                "slots": [],
-                "skins": {"default": {}},
-                "animations": {"animation": {}},
-            }
-        return ret
+        return {
+            "skeleton": {},
+            "bones": [self.root_bone],
+            "slots": [],
+            "skins": {"default": {}},
+            "animations": {"animation": {}},
+        }
+
+    # def get_default_struct(self):
+    #     """
+    #     If the merge option was specified, attempt to load the given file
+    #     as JSON and return its contents.
+    #     Otherwise, return a default Spine structure.
+    #     """
+    #     default = self.options.merge
+    #     if default:
+    #         try:
+    #             with open(default, "r") as f:
+    #                 ret = json.load(f)
+    #             self.root_bone = ret["bones"][0]
+    #         except Exception:
+    #             inkex.errormsg("%r is not a valid Spine JSON file." % (default))
+    #             raise
+    #     else:
+    #         ret = {
+    #             "skeleton": {},
+    #             "bones": [self.root_bone],
+    #             "slots": [],
+    #             "skins": {"default": {}},
+    #             "animations": {"animation": {}},
+    #         }
+    #     return ret
 
     def _get_obj(self, struct, name):
         """
@@ -217,7 +234,40 @@ class SpineExporter(inkex.EffectExtension):
             )
             return True
 
+    def center_spine_slots(self, struct):
+        skin = struct["skins"]["default"]
+
+        x_min = float('+inf')
+        x_max = float('-inf')
+        y_min = float('+inf')
+        y_max = float('-inf')
+        for prop_name, prop_value in skin.items():
+            slot = prop_value[prop_name]
+            center_x = slot.get("x", 0.0)
+            center_y = slot.get("y", 0.0)
+            half_width = slot.get("width", 0.0) * 0.5
+            half_height = slot.get("height", 0.0) * 0.5
+            x_min = min(x_min, center_x - half_width)
+            x_max = max(x_max, center_x + half_width)
+            y_min = min(y_min, center_y - half_height)
+            y_max = max(y_max, center_y + half_height)
+
+        bb_center_x = (x_min + x_max) * 0.5
+        bb_center_y = (y_min + y_max) * 0.5
+
+        # inkex.utils.debug("BB center: " + str(bb_center_x) + " " + str(bb_center_y))
+
+        for prop_name, prop_value in skin.items():
+            slot = prop_value[prop_name]
+            slot["x"] = slot.get("x", 0.0) - bb_center_x
+            slot["y"] = slot.get("y", 0.0) - bb_center_y
+
     def effect(self):
+        selected_objects = self.svg.selected
+        if len(selected_objects) == 0:
+            inkex.errormsg("Nothing is selected.")
+            return
+
         outdir = os.path.expanduser(self.options.outdir)
         imagedir = os.path.join(outdir, "images")
         if not os.path.exists(imagedir):
@@ -238,18 +288,13 @@ class SpineExporter(inkex.EffectExtension):
 
             self.bone_coords[bone["name"]] = x, y
 
-        for layer in self.layers:
-            id = layer.attrib["id"]
-            label = layer.attrib.get(INKSCAPE_LABEL, id)
-
-            if self.options.ignore_hidden:
-                style = parse_css_style(layer.attrib.get("style", ""))
-                if style.get("display") == "none":
-                    continue
+        for obj in selected_objects:
+            id = obj.get_id()
+            label = obj.attrib.get(INKSCAPE_LABEL, id)
 
             outfile = os.path.join(imagedir, "%s.png" % label)
 
-            # Render layer element.
+            # Render the object.
             command = (
                 "inkscape",
                 self.options.input_file,
@@ -270,7 +315,15 @@ class SpineExporter(inkex.EffectExtension):
             self.merge_spine_slot(spine_struct, label)
 
         if self.options.json:
-            path = os.path.join(outdir, "%s.json" % (self.friendly_name))
+
+            if self.options.center_slots:
+                self.center_spine_slots(spine_struct)
+
+            # If user didn't specify the skeleton name, use the document name instead.
+            skel_name = self.options.skel_name
+            if not skel_name or skel_name.isspace():
+                skel_name = self.friendly_name
+            path = os.path.join(outdir, "%s.json" % skel_name)
             if self.options.pretty:
                 args = {"separators": (",", ": "), "indent": 4}
             else:

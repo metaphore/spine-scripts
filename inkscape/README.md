@@ -17,7 +17,11 @@ _Compatibility with the previous Inkscape versions is not guaranteed._
 After installation, choose `Spine` under the `Extensions` menu.
 
 ### Spine Export - Objects
-Export individual SVG objects as PNG images and generate a Spine JSON file.
+Writes individual SVG objects as PNG images and creates a JSON file to bring the images into Spine 
+with the same positions and draw order they had in Inkscape.
+Read [Spine JSON import guide](http://esotericsoftware.com/spine-import) for details.
+
+The center of the Inkscape document/canvas corresponds to 0,0 in Spine (unless **Center content** is checked). 
 
 The script has two modes:
 - **Selected Objects** - Export only the selected SVG objects (including layers, groups, and any other SVG nodes) as individual images.
@@ -37,7 +41,7 @@ When enabled, the image attachments would have their fully qualified image path 
 
 If **"Center content"** is enabled, the output composition will be centered in the Spine project.
 
-_NOTE: The so-called layer tags (as you may find them in the other Spine export scripts) are not supported at the moment._
+_NOTE: The layer tags (in square brackets), as you may know them from the other Spine export scripts, are not supported at the moment._
 _The script exports a flat dimensional skeleton. All the slots belong to the "root" bone, and there's no multi-attach slot support)._
 
 Know issues:
@@ -49,5 +53,3 @@ Know issues:
 A Spine JSON file containing the Inkscape paths will be generated.
 
 > `paths_to_spine` script is out of date (not compatbile with Inkscape `v1.2.2`) and requires maintenance.
-
-The Spine JSON files can be [imported](http://esotericsoftware.com/spine-import) into Spine.

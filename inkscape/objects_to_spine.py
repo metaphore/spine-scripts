@@ -3,13 +3,14 @@
 """
 Spine export for Inkscape
 
-Export each of [selected objects/visible layers] in the current document to individual PNG file
+Export each of [selected objects/visible layers] in the current document to an individual PNG file
 and generate a Spine JSON file to import.
 https://esotericsoftware.com/spine-json-format
 
 Changelog:
 v1.0.0 @metaphore
-    - The old "InkscapeToSpine" script code updated to Inkscape 1.3.0 and optimized.
+    - The old "InkscapeToSpine" script code was updated to Inkscape 1.3.0 and optimized.
+    - Dropped support for DPI param. We stick to the "px" units of the document.
     - Dropped support for existing Skeleton JSON merge from the original script.
     - Option to choose between export from "visible layers" and "selected objects".
     - Support for name prefix and sub-dir structure of each individual image.
@@ -69,14 +70,6 @@ class SpineExporter(inkex.EffectExtension):
             help="Name of the exported skeleton",
         )
         pars.add_argument(
-            "--dpi",
-            action="store",
-            type=float,
-            dest="dpi",
-            default=90.0,
-            help="Resolution to export at",
-        )
-        pars.add_argument(
             "--json",
             type=inkex.Boolean,
             dest="create_json",
@@ -98,7 +91,7 @@ class SpineExporter(inkex.EffectExtension):
             "--compact-names",
             type=inkex.Boolean,
             dest="compact_names",
-            help="Slots and attachments will be shorten",
+            help="Slots and attachments will be shortened",
         )
 
     # Prevent the original document modification.
@@ -107,23 +100,22 @@ class SpineExporter(inkex.EffectExtension):
 
     def effect(self):
         # Delete all the invisible nodes in the document.
-        # This is required, due to node's rendering clips off the hidden sub-nodes.
+        # This is required, due to the node's rendering clips off the hidden sub-nodes.
         # But the Inkex's bounding box still includes the hidden sub-nodes.
         self.delete_invisible_children(self.svg)
 
         export_mode = self.options.export_mode
-        match export_mode:
+        
+        if export_mode == self.mode_selected_objects:
+            nodes = self.collect_selected_nodes()
+            self.export_nodes(nodes)
 
-            case self.mode_selected_objects:
-                nodes = self.collect_selected_nodes()
-                self.export_nodes(nodes)
+        elif export_mode == self.mode_visible_layers:
+            nodes = self.collect_layers()
+            self.export_nodes(nodes)
 
-            case self.mode_visible_layers:
-                nodes = self.collect_layers()
-                self.export_nodes(nodes)
-
-            case _:
-                raise NotImplementedError("Unexpected export mode: " + export_mode)
+        else:
+            raise NotImplementedError("Unexpected export mode: " + export_mode)
 
     def collect_layers(self) -> list[IBaseElement]:
         xpath = "./svg:g[@inkscape:groupmode='layer']"
@@ -156,7 +148,7 @@ class SpineExporter(inkex.EffectExtension):
         return selected_nodes
 
     def export_nodes(self, nodes: list[IBaseElement]):
-        image_prefix = self.options.image_prefix
+        image_prefix = self.options.image_prefix.replace("\\", "/")
 
         output_dir = os.path.expanduser(self.options.outdir)
         images_dir = os.path.join(output_dir, "images")
@@ -178,9 +170,9 @@ class SpineExporter(inkex.EffectExtension):
             if bbox is None:
                 continue
 
-            # Inkscape uses the "inkscape:label" attribute for display name
+            # Inkscape uses the "inkscape:label" attribute to display the name
             # (the one you see and edit in the "Layers and Objects" window).
-            # If the label is missing, fallback to the mandatory "id" attribute instead.
+            # If the label is missing, fall back to the mandatory "id" attribute instead.
             node_name = node.label
             if node_name is None or str(node_name).isspace():
                 node_name = node.get_id()
@@ -201,7 +193,8 @@ class SpineExporter(inkex.EffectExtension):
                     "export-filename": image_file,
                     "export-id": node.get_id(),
                     "export-id-only": None,
-                    "export-dpi": str(self.options.dpi),
+                    "export-overwrite": None,
+                    "export-text-to-path": None, # Do we need this?
                 }
             )
 
@@ -211,7 +204,7 @@ class SpineExporter(inkex.EffectExtension):
                 # Trim dirs from the full file name.
                 attach_name = os.path.splitext(os.path.basename(image_file))[0]
                 # Remove the ".png" extension.
-                attach_path = os.path.relpath(image_file, images_dir)[:-4]
+                attach_path = os.path.relpath(image_file, images_dir)[:-4].replace("\\", "/")
             slot_name = attach_name
 
             self.register_image_attachment(skel_struct, slot_name, attach_name, attach_path, bbox)
@@ -242,8 +235,6 @@ class SpineExporter(inkex.EffectExtension):
         return doc_root.attrib["id"]
 
     def get_canvas_size(self) -> tuple[float, float]:
-        # It's unclear weather we should stick to viewbox or viewport values here.
-        # This might be a source of various transformation bugs.
         width = self.svg.viewport_width
         height = self.svg.viewport_height
         return width, height
@@ -306,22 +297,41 @@ class SpineExporter(inkex.EffectExtension):
             else:
                 SpineExporter.delete_invisible_children(child_node)
 
-    @staticmethod
-    def get_bounding_box(node: IBaseElement) -> tuple[float, float, float, float] | None:
+    # @staticmethod
+    def get_bounding_box(self, node: IBaseElement) -> tuple[float, float, float, float] | None:
         transform = None
         parent = node.getparent()
         if parent is not None:
             transform = parent.composed_transform()
-        bounding_box = node.shape_box(transform)
+        # bounding_box = node.shape_box(transform)
+        bounding_box = node.bounding_box(transform)
 
         if bounding_box is None:
             return None
 
-        x = round(bounding_box.x.minimum)
-        y = round(bounding_box.y.minimum)
-        width = round(bounding_box.width)
-        height = round(bounding_box.height)
-        # debug("ID: %s, BB: %s, %s, %s, %s" % (node.get_id(), x, y, width, height))
+        # debug("ID: %s, BB: %s, %s, %s, %s" % (
+        #     node.get_id(), 
+        #     bounding_box.x.minimum, 
+        #     bounding_box.y.minimum, 
+        #     bounding_box.width, 
+        #     bounding_box.height))
+
+        # debug("ID: %s, BB_PX: %s, %s, %s, %s" % (
+        #     node.get_id(), 
+        #     self.svg.uutounit(bounding_box.x.minimum, "px"), 
+        #     self.svg.uutounit(bounding_box.y.minimum, "px"), 
+        #     self.svg.uutounit(bounding_box.width,  "px"),
+        #     self.svg.uutounit(bounding_box.height, "px")))
+
+        # x = round(bounding_box.x.minimum)
+        # y = round(bounding_box.y.minimum)
+        # width = round(bounding_box.width)
+        # height = round(bounding_box.height)
+
+        x = round(self.svg.uutounit(bounding_box.x.minimum))
+        y = round(self.svg.uutounit(bounding_box.y.minimum))
+        width = round(self.svg.uutounit(bounding_box.width))
+        height = round(self.svg.uutounit(bounding_box.height))
         return x, y, width, height
 
     @staticmethod
@@ -338,8 +348,8 @@ class SpineExporter(inkex.EffectExtension):
     @staticmethod
     def center_skel_content(skel_struct):
         # For now as we keep things simple, the image attachment translation is not a big deal,
-        # but later if we add support for other Spine type (e.g. paths or meshes)
-        # we would need to come up with a much more sophisticated approach of centering the content.
+        # but later if we add support for other Spine types (e.g. paths or meshes)
+        # we would need to come up with a much more sophisticated approach for centering the content.
 
         slot_list = skel_struct["skins"][0]["attachments"]
 

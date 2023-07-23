@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inkscape-extension xmlns="http://www.inkscape.org/namespace/inkscape/extension">
+    <name>Spine Export - Objects</name>
+    <id>com.esotericsoftware.spine.inkscape.export.objects</id>
+
+    <param name="tab" type="notebook">
+        <page name="options-tab" gui-text="Options">
+            <param name="export-mode" type="optiongroup" appearance="combo" gui-text="Export mode">
+               <option value="selected_objects">Selected objects</option>
+               <option value="visible_layers">Visible layers</option>
+            </param>
+            <param name="outdir" type="path" mode="folder" gui-text="Output directory">~/InkscapeExport</param>
+            <param name="image-prefix" type="string" gui-text="Image prefix (Optional)"/>
+            <param name="skeleton-name" type="string" gui-text="Skeleton name (Optional)"/>
+            <param name="dpi" type="float" min="0" max="10000" gui-text="Resolution (DPI)">90.0</param>
+            <param name="json" type="boolean" gui-text="Save a JSON file">true</param>
+            <param name="pretty-print" type="boolean" gui-text="Pretty print JSON">true</param>
+            <param name="center-content" type="boolean" gui-text="Center content">true</param>
+            <param name="compact-names" type="boolean" gui-text="Compact names">true</param>
+        </page>
+        <page name="about_tab" gui-text="About">
+            <label appearance="header">Objects to Spine Exporter</label>
+            <label>Export each of [selected objects/visible layers] in the current document to individual PNG file
+                and generate a Spine JSON file to import.
+            </label>
+            <label>The generated images are placed under the "images" sub-folder of the "Output directory" location.
+            </label>
+            <label>The "Image prefix" field allows to define further sub-dir structure for the output images.
+                For example, the "characters/dog/" value would make the exporter to place all the images under
+                "{Output directory}/images/characters/dog/*.png"
+            </label>
+            <label>The "Compact names" switch, makes it possible to
+                have short slot and attachment names in the exported JSON file.
+                Imagine you have an object with the ID "head" as part of your export.
+                If you configure the "Images prefix" to be "characters/dog/",
+                then the output image would be exported to "images/characters/dog/head.png".
+                In that case the name of the generated slot and attachment would be "characters/dog/head".
+                To make the exported Skeleton to look a bit cleaner, it's recommended to set the
+                "Compact names" option. When switched on, the corresponding slot and the attachment would be named just "head",
+                and the full path to the image would be added to the "path" property of the attachment.
+
+            </label>
+        </page>
+    </param>
+
+    <!-- Live preview doesn't make sense, so we add this attribute to remove it -->
+    <effect needs-live-preview="false">
+        <object-type>all</object-type>
+        <effects-menu>
+            <submenu name="Spine"/>
+        </effects-menu>
+    </effect>
+
+    <script>
+        <command reldir="extensions" interpreter="python">objects_to_spine.py</command>
+    </script>
+</inkscape-extension>

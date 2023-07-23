@@ -42,6 +42,11 @@ If **"Center content"** is enabled, the output composition will be centered in t
 _NOTE: The so-called layer tags (as you may find them in the other Spine export scripts) are not supported at the moment._
 _The script exports a flat dimensional skeleton. All the slots belong to the "root" bone, and there's no multi-attach slot support)._
 
+Know issues:
+- A text element (`svg:text`) has the wrong position in the exported Spine JSON.
+  As a workaround wrap a text into a group (`svg:group`)
+  or turn the text object into a path (`Path > Object to Path`).
+
 ### Spine Export - Paths
 A Spine JSON file containing the Inkscape paths will be generated.
 

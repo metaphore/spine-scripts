@@ -23,7 +23,7 @@ import os
 import inkex
 import json
 
-from inkex import IBaseElement
+from inkex import BaseElement
 from inkex.command import inkscape
 from inkex.utils import debug, AbortExtension
 
@@ -117,10 +117,10 @@ class SpineExporter(inkex.EffectExtension):
         else:
             raise NotImplementedError("Unexpected export mode: " + export_mode)
 
-    def collect_layers(self) -> list[IBaseElement]:
+    def collect_layers(self) -> list[BaseElement]:
         xpath = "./svg:g[@inkscape:groupmode='layer']"
 
-        def get_layers(layer: IBaseElement) -> list[IBaseElement]:
+        def get_layers(layer: BaseElement) -> list[BaseElement]:
             ret = []
             sublayers = layer.xpath(xpath, namespaces=inkex.NSS)
             if sublayers:
@@ -133,13 +133,13 @@ class SpineExporter(inkex.EffectExtension):
 
             return ret
 
-        doc_root: IBaseElement = self.svg
+        doc_root: BaseElement = self.svg
         layers = get_layers(doc_root)
         if layers[0] == doc_root:
             raise AbortExtension("No layers found in the document")
         return layers
 
-    def collect_selected_nodes(self) -> list[IBaseElement]:
+    def collect_selected_nodes(self) -> list[BaseElement]:
         selected_nodes = self.svg.selection.rendering_order()
         # Filter out invisible objects.
         selected_nodes = list(filter(lambda node: not self.is_hidden(node), selected_nodes))
@@ -147,7 +147,7 @@ class SpineExporter(inkex.EffectExtension):
             raise AbortExtension("Nothing is selected.")
         return selected_nodes
 
-    def export_nodes(self, nodes: list[IBaseElement]):
+    def export_nodes(self, nodes: list[BaseElement]):
         image_prefix = self.options.image_prefix.replace("\\", "/")
 
         output_dir = os.path.expanduser(self.options.outdir)
@@ -283,12 +283,12 @@ class SpineExporter(inkex.EffectExtension):
         skin_slot_record[attach_name] = attach_props
 
     @staticmethod
-    def is_hidden(node: IBaseElement) -> bool:
+    def is_hidden(node: BaseElement) -> bool:
         style = inkex.Style.parse_str(node.attrib.get("style", ""))
         return style.get("display") == "none"
 
     @staticmethod
-    def delete_invisible_children(node: IBaseElement):
+    def delete_invisible_children(node: BaseElement):
         children = node.getchildren().copy()
         for child_node in children:
             if SpineExporter.is_hidden(child_node):
@@ -298,35 +298,15 @@ class SpineExporter(inkex.EffectExtension):
                 SpineExporter.delete_invisible_children(child_node)
 
     # @staticmethod
-    def get_bounding_box(self, node: IBaseElement) -> tuple[float, float, float, float] | None:
+    def get_bounding_box(self, node: BaseElement) -> tuple[float, float, float, float] | None:
         transform = None
         parent = node.getparent()
         if parent is not None:
             transform = parent.composed_transform()
-        # bounding_box = node.shape_box(transform)
         bounding_box = node.bounding_box(transform)
 
         if bounding_box is None:
             return None
-
-        # debug("ID: %s, BB: %s, %s, %s, %s" % (
-        #     node.get_id(), 
-        #     bounding_box.x.minimum, 
-        #     bounding_box.y.minimum, 
-        #     bounding_box.width, 
-        #     bounding_box.height))
-
-        # debug("ID: %s, BB_PX: %s, %s, %s, %s" % (
-        #     node.get_id(), 
-        #     self.svg.uutounit(bounding_box.x.minimum, "px"), 
-        #     self.svg.uutounit(bounding_box.y.minimum, "px"), 
-        #     self.svg.uutounit(bounding_box.width,  "px"),
-        #     self.svg.uutounit(bounding_box.height, "px")))
-
-        # x = round(bounding_box.x.minimum)
-        # y = round(bounding_box.y.minimum)
-        # width = round(bounding_box.width)
-        # height = round(bounding_box.height)
 
         x = round(self.svg.uutounit(bounding_box.x.minimum))
         y = round(self.svg.uutounit(bounding_box.y.minimum))

@@ -2,12 +2,13 @@
 
 ## Installation
 
-- To download, right-click each of these files and choose `Save As`:
-  - [objects_to_spine.inx](https://raw.githubusercontent.com/EsotericSoftware/spine-scripts/master/inkscape/objects_to_spine.inx)
-  - [objects_to_spine.py](https://raw.githubusercontent.com/EsotericSoftware/spine-scripts/master/inkscape/objects_to_spine.py)
-- Move the files to the Inkscape extensions directory (eg `$HOME/.config/inkscape/extensions`).
-  To find the directory, open the preferences dialog - `Edit > Preferences`, navigate to the `System` tab, and look for the `User extensions` field.
-- Restart Inkscape.
+1. To download, right-click each of these files and choose `Save As`:
+   - [objects_to_spine.inx](https://raw.githubusercontent.com/EsotericSoftware/spine-scripts/master/inkscape/objects_to_spine.inx)
+   - [objects_to_spine.py](https://raw.githubusercontent.com/EsotericSoftware/spine-scripts/master/inkscape/objects_to_spine.py)
+2. Move the files to the Inkscape extensions directory (eg `$HOME/.config/inkscape/extensions`).
+  To find the directory, open the preferences dialog - `Edit > Preferences`, 
+  navigate to the `System` tab, and look for the `User extensions` field.
+3. Restart Inkscape.
 
 _The scripts are tested and developed for Inkscape `v1.2.2`._
 _Compatibility with the previous Inkscape versions is not guaranteed._
@@ -21,7 +22,7 @@ Writes individual SVG objects as PNG images and creates a JSON file to bring the
 with the same positions and draw order they had in Inkscape.
 Read [Spine JSON import guide](http://esotericsoftware.com/spine-import) for details.
 
-The center of the Inkscape document/canvas corresponds to 0,0 in Spine (unless **Center content** is checked). 
+The center of the Inkscape document/canvas corresponds to 0,0 in Spine (unless **"Center content"** is checked). 
 
 The script has two modes:
 - **Selected Objects** - Export only the selected SVG objects (including layers, groups, and any other SVG nodes) as individual images.

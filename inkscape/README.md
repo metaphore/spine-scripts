@@ -3,10 +3,10 @@
 ## Installation
 
 - To download, right-click each of these files and choose `Save As`:
-  - [objects_to_spine.inx](objects_to_spine.inx)
-  - [objects_to_spine.py](objects_to_spine.py)
-  - [paths_to_spine.inx](paths_to_spine.inx)
-  - [paths_to_spine.py](paths_to_spine.py)
+  - [objects_to_spine.inx](https://raw.githubusercontent.com/EsotericSoftware/spine-scripts/spine-scripts/master/inkscape/objects_to_spine.inx)
+  - [objects_to_spine.py](https://raw.githubusercontent.com/EsotericSoftware/spine-scripts/spine-scripts/master/inkscape/objects_to_spine.py)
+  - [paths_to_spine.inx](https://raw.githubusercontent.com/EsotericSoftware/spine-scripts/spine-scripts/master/inkscape/paths_to_spine.inx)
+  - [paths_to_spine.py](https://raw.githubusercontent.com/EsotericSoftware/spine-scripts/spine-scripts/master/inkscape/paths_to_spine.py)
 - Move the files to the Inkscape extensions directory (eg `$HOME/.config/inkscape/extensions`).
   To find the directory, open the preferences dialog - `Edit > Preferences`, navigate to the `System` tab, and look for the `User extensions` field.
 - Restart Inkscape.

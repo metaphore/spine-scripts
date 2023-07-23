@@ -10,6 +10,7 @@ https://esotericsoftware.com/spine-json-format
 Changelog:
 v1.0.0 @metaphore
     - The old "InkscapeToSpine" script code was updated to Inkscape 1.3.0 and optimized.
+    - Dropped support for DPI param. We stick to the "px" units of the document.
     - Dropped support for existing Skeleton JSON merge from the original script.
     - Option to choose between export from "visible layers" and "selected objects".
     - Support for name prefix and sub-dir structure of each individual image.
@@ -67,14 +68,6 @@ class SpineExporter(inkex.EffectExtension):
             dest="skel_name",
             default=None,
             help="Name of the exported skeleton",
-        )
-        pars.add_argument(
-            "--dpi",
-            action="store",
-            type=float,
-            dest="dpi",
-            default=90.0,
-            help="Resolution to export at",
         )
         pars.add_argument(
             "--json",
@@ -155,7 +148,7 @@ class SpineExporter(inkex.EffectExtension):
         return selected_nodes
 
     def export_nodes(self, nodes: list[IBaseElement]):
-        image_prefix = self.options.image_prefix
+        image_prefix = self.options.image_prefix.replace("\\", "/")
 
         output_dir = os.path.expanduser(self.options.outdir)
         images_dir = os.path.join(output_dir, "images")
@@ -200,7 +193,8 @@ class SpineExporter(inkex.EffectExtension):
                     "export-filename": image_file,
                     "export-id": node.get_id(),
                     "export-id-only": None,
-                    "export-dpi": str(self.options.dpi),
+                    "export-overwrite": None,
+                    "export-text-to-path": None, # Do we need this?
                 }
             )
 
@@ -210,7 +204,7 @@ class SpineExporter(inkex.EffectExtension):
                 # Trim dirs from the full file name.
                 attach_name = os.path.splitext(os.path.basename(image_file))[0]
                 # Remove the ".png" extension.
-                attach_path = os.path.relpath(image_file, images_dir)[:-4]
+                attach_path = os.path.relpath(image_file, images_dir)[:-4].replace("\\", "/")
             slot_name = attach_name
 
             self.register_image_attachment(skel_struct, slot_name, attach_name, attach_path, bbox)
@@ -241,8 +235,6 @@ class SpineExporter(inkex.EffectExtension):
         return doc_root.attrib["id"]
 
     def get_canvas_size(self) -> tuple[float, float]:
-        # It's unclear weather we should stick to viewbox or viewport values here.
-        # This might be a source of various transformation bugs.
         width = self.svg.viewport_width
         height = self.svg.viewport_height
         return width, height
@@ -305,22 +297,41 @@ class SpineExporter(inkex.EffectExtension):
             else:
                 SpineExporter.delete_invisible_children(child_node)
 
-    @staticmethod
-    def get_bounding_box(node: IBaseElement) -> tuple[float, float, float, float] | None:
+    # @staticmethod
+    def get_bounding_box(self, node: IBaseElement) -> tuple[float, float, float, float] | None:
         transform = None
         parent = node.getparent()
         if parent is not None:
             transform = parent.composed_transform()
-        bounding_box = node.shape_box(transform)
+        # bounding_box = node.shape_box(transform)
+        bounding_box = node.bounding_box(transform)
 
         if bounding_box is None:
             return None
 
-        x = round(bounding_box.x.minimum)
-        y = round(bounding_box.y.minimum)
-        width = round(bounding_box.width)
-        height = round(bounding_box.height)
-        # debug("ID: %s, BB: %s, %s, %s, %s" % (node.get_id(), x, y, width, height))
+        # debug("ID: %s, BB: %s, %s, %s, %s" % (
+        #     node.get_id(), 
+        #     bounding_box.x.minimum, 
+        #     bounding_box.y.minimum, 
+        #     bounding_box.width, 
+        #     bounding_box.height))
+
+        # debug("ID: %s, BB_PX: %s, %s, %s, %s" % (
+        #     node.get_id(), 
+        #     self.svg.uutounit(bounding_box.x.minimum, "px"), 
+        #     self.svg.uutounit(bounding_box.y.minimum, "px"), 
+        #     self.svg.uutounit(bounding_box.width,  "px"),
+        #     self.svg.uutounit(bounding_box.height, "px")))
+
+        # x = round(bounding_box.x.minimum)
+        # y = round(bounding_box.y.minimum)
+        # width = round(bounding_box.width)
+        # height = round(bounding_box.height)
+
+        x = round(self.svg.uutounit(bounding_box.x.minimum))
+        y = round(self.svg.uutounit(bounding_box.y.minimum))
+        width = round(self.svg.uutounit(bounding_box.width))
+        height = round(self.svg.uutounit(bounding_box.height))
         return x, y, width, height
 
     @staticmethod

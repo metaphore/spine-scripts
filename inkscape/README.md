@@ -5,8 +5,6 @@
 - To download, right click each of these files and choose `Save As`:
   - [objects_to_spine.inx](https://github.com/EsotericSoftware/spine-scripts/raw/master/inkscape/objects_to_spine.inx)
   - [objects_to_spine.py](https://github.com/EsotericSoftware/spine-scripts/raw/master/inkscape/objects_to_spine.py)
-  - [paths_to_spine.inx](https://github.com/EsotericSoftware/spine-scripts/raw/master/inkscape/paths_to_spine.inx)
-  - [paths_to_spine.py](https://github.com/EsotericSoftware/spine-scripts/raw/master/inkscape/paths_to_spine.py)
 - Move the files to the Inkscape extensions directory (eg `$HOME/.config/inkscape/extensions`).
 - Restart Inkscape.
 
@@ -43,5 +41,7 @@ _The script exports is a flat dimentional skeleton. All the slots belong to the 
 
 ### Spine Export - Paths
 A Spine JSON file containing the Inkscape paths will be generated.
+
+> `paths_to_spine` script is out of date (not compatbile with Inkscape `v1.2.2`) and requires maintenance.
 
 The Spine JSON files can be [imported](http://esotericsoftware.com/spine-import) into Spine.

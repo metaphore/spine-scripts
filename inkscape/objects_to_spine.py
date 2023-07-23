@@ -20,10 +20,9 @@ v1.0.0 @metaphore
 import os
 
 import inkex
-import inkex.units
 import json
 
-from inkex import BaseElement
+from inkex import IBaseElement
 from inkex.command import inkscape
 from inkex.utils import debug, AbortExtension
 
@@ -110,7 +109,7 @@ class SpineExporter(inkex.EffectExtension):
         # Delete all the invisible nodes in the document.
         # This is required, due to node's rendering clips off the hidden sub-nodes.
         # But the Inkex's bounding box still includes the hidden sub-nodes.
-        self.delete_invisible_children(self.document.getroot())
+        self.delete_invisible_children(self.svg)
 
         export_mode = self.options.export_mode
         match export_mode:
@@ -126,10 +125,10 @@ class SpineExporter(inkex.EffectExtension):
             case _:
                 raise NotImplementedError("Unexpected export mode: " + export_mode)
 
-    def collect_layers(self) -> list[BaseElement]:
+    def collect_layers(self) -> list[IBaseElement]:
         xpath = "./svg:g[@inkscape:groupmode='layer']"
 
-        def get_layers(layer: BaseElement) -> list[BaseElement]:
+        def get_layers(layer: IBaseElement) -> list[IBaseElement]:
             ret = []
             sublayers = layer.xpath(xpath, namespaces=inkex.NSS)
             if sublayers:
@@ -142,13 +141,13 @@ class SpineExporter(inkex.EffectExtension):
 
             return ret
 
-        doc_root = self.document.getroot()
+        doc_root: IBaseElement = self.svg
         layers = get_layers(doc_root)
         if layers[0] == doc_root:
             raise AbortExtension("No layers found in the document")
         return layers
 
-    def collect_selected_nodes(self) -> list[BaseElement]:
+    def collect_selected_nodes(self) -> list[IBaseElement]:
         selected_nodes = self.svg.selection.rendering_order()
         # Filter out invisible objects.
         selected_nodes = list(filter(lambda node: not self.is_hidden(node), selected_nodes))
@@ -156,7 +155,7 @@ class SpineExporter(inkex.EffectExtension):
             raise AbortExtension("Nothing is selected.")
         return selected_nodes
 
-    def export_nodes(self, nodes: list[BaseElement]):
+    def export_nodes(self, nodes: list[IBaseElement]):
         image_prefix = self.options.image_prefix
 
         output_dir = os.path.expanduser(self.options.outdir)
@@ -217,6 +216,7 @@ class SpineExporter(inkex.EffectExtension):
 
             self.register_image_attachment(skel_struct, slot_name, attach_name, attach_path, bbox)
 
+        # Create Skeleton JSON file.
         if self.options.create_json:
             if self.options.center_content:
                 self.center_skel_content(skel_struct)
@@ -235,7 +235,7 @@ class SpineExporter(inkex.EffectExtension):
                 json.dump(skel_struct, f, **args)
 
     def get_document_name(self) -> str:
-        doc_root = self.document.getroot()
+        doc_root = self.svg
         doc_name = doc_root.xpath("//@sodipodi:docname", namespaces=inkex.NSS)
         if doc_name:
             return doc_name[0].replace(".svg", "")
@@ -292,12 +292,12 @@ class SpineExporter(inkex.EffectExtension):
         skin_slot_record[attach_name] = attach_props
 
     @staticmethod
-    def is_hidden(node: BaseElement) -> bool:
+    def is_hidden(node: IBaseElement) -> bool:
         style = inkex.Style.parse_str(node.attrib.get("style", ""))
         return style.get("display") == "none"
 
     @staticmethod
-    def delete_invisible_children(node: BaseElement):
+    def delete_invisible_children(node: IBaseElement):
         children = node.getchildren().copy()
         for child_node in children:
             if SpineExporter.is_hidden(child_node):
@@ -307,7 +307,7 @@ class SpineExporter(inkex.EffectExtension):
                 SpineExporter.delete_invisible_children(child_node)
 
     @staticmethod
-    def get_bounding_box(node: BaseElement) -> tuple[float, float, float, float] | None:
+    def get_bounding_box(node: IBaseElement) -> tuple[float, float, float, float] | None:
         transform = None
         parent = node.getparent()
         if parent is not None:

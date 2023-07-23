@@ -16,6 +16,6 @@
 		</effects-menu>
 	</effect>
 	<script>
-		<command reldir="extensions" interpreter="python">PathsToSpine.py</command>
+		<command reldir="extensions" interpreter="python">paths_to_spine.py</command>
 	</script>
 </inkscape-extension>

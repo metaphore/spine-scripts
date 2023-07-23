@@ -341,30 +341,34 @@ class SpineExporter(inkex.EffectExtension):
         # but later if we add support for other Spine type (e.g. paths or meshes)
         # we would need to come up with a much more sophisticated approach of centering the content.
 
-        skin = skel_struct["skins"][0]
+        slot_list = skel_struct["skins"][0]["attachments"]
 
+        # Find the composition bounding box.
         x_min = float("+inf")
         x_max = float("-inf")
         y_min = float("+inf")
         y_max = float("-inf")
-        for prop_name, prop_value in skin.items():
-            slot = prop_value[prop_name]
-            center_x = slot.get("x", 0.0)
-            center_y = slot.get("y", 0.0)
-            half_width = slot.get("width", 0.0) * 0.5
-            half_height = slot.get("height", 0.0) * 0.5
-            x_min = min(x_min, center_x - half_width)
-            x_max = max(x_max, center_x + half_width)
-            y_min = min(y_min, center_y - half_height)
-            y_max = max(y_max, center_y + half_height)
+
+        for slot in slot_list.values():
+            # A slot may contain multiple attachments.
+            for attach in slot.values():
+                center_x = attach.get("x", 0.0)
+                center_y = attach.get("y", 0.0)
+                half_width = attach.get("width", 0.0) * 0.5
+                half_height = attach.get("height", 0.0) * 0.5
+                x_min = min(x_min, center_x - half_width)
+                x_max = max(x_max, center_x + half_width)
+                y_min = min(y_min, center_y - half_height)
+                y_max = max(y_max, center_y + half_height)
 
         bb_center_x = (x_min + x_max) * 0.5
         bb_center_y = (y_min + y_max) * 0.5
 
-        for prop_name, prop_value in skin.items():
-            slot = prop_value[prop_name]
-            slot["x"] = slot.get("x", 0.0) - bb_center_x
-            slot["y"] = slot.get("y", 0.0) - bb_center_y
+        # Shift all attachments.
+        for slot in slot_list.values():
+            for attach in slot.values():
+                attach["x"] = attach.get("x", 0.0) - bb_center_x
+                attach["y"] = attach.get("y", 0.0) - bb_center_y
 
 
 if __name__ == "__main__":

@@ -3,13 +3,13 @@
 """
 Spine export for Inkscape
 
-Export each of [selected objects/visible layers] in the current document to an individual PNG file
-and generate a Spine JSON file to import.
+Exports each of [selected objects/visible layers] in the current document to an individual PNG file
+and generates a JSON file for Spine import.
 https://esotericsoftware.com/spine-json-format
 
 Changelog:
-v1.0.0 @metaphore
-    - The old "InkscapeToSpine" script code was updated to Inkscape 1.3.0 and optimized.
+v1.0 @metaphore
+    - The old "InkscapeToSpine" script code was updated to Inkex 1.2.2 and optimized.
     - Dropped support for DPI param. We stick to the "px" units of the document.
     - Dropped support for existing Skeleton JSON merge from the original script.
     - Option to choose between export from "visible layers" and "selected objects".

@@ -244,8 +244,8 @@ class SpineExporter(inkex.EffectExtension):
     def get_canvas_size(self) -> tuple[float, float]:
         # It's unclear weather we should stick to viewbox or viewport values here.
         # This might be a source of various transformation bugs.
-        width = self.svg.viewbox_width
-        height = self.svg.viewbox_height
+        width = self.svg.viewport_width
+        height = self.svg.viewport_height
         return width, height
 
     def coords_to_spine(self, left, top, width, height) -> tuple[float, float, float, float]:

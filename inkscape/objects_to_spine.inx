@@ -12,7 +12,6 @@
             <param name="outdir" type="path" mode="folder" gui-text="Output directory">~/InkscapeExport</param>
             <param name="image-prefix" type="string" gui-text="Image prefix (Optional)"/>
             <param name="skeleton-name" type="string" gui-text="Skeleton name (Optional)"/>
-            <param name="dpi" type="float" min="0" max="10000" gui-text="Resolution (DPI)">90.0</param>
             <param name="json" type="boolean" gui-text="Save a JSON file">true</param>
             <param name="pretty-print" type="boolean" gui-text="Pretty print JSON">true</param>
             <param name="center-content" type="boolean" gui-text="Center content">true</param>
@@ -30,7 +29,7 @@
             <label appearance="url">
                 https://github.com/EsotericSoftware/spine-scripts/tree/master/inkscape
             </label>
-            <label>or open a discussion on the offical Spine forum</label>
+            <label>or open a discussion on the official Spine forum</label>
             <label appearance="url">
                 https://en.esotericsoftware.com/forum/
             </label>

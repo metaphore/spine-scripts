@@ -8,7 +8,7 @@
   - [paths_to_spine.inx](https://github.com/EsotericSoftware/spine-scripts/raw/master/inkscape/paths_to_spine.inx)
   - [paths_to_spine.py](https://github.com/EsotericSoftware/spine-scripts/raw/master/inkscape/paths_to_spine.py)
 - Move the files to the Inkscape extensions directory (eg `$HOME/.config/inkscape/extensions`).
-  To find the directory, open the preferences dialog - `Edit > Preferences`, navigate to the `System` tab, and look for the `User extensions` value.
+  To find the directory, open the preferences dialog - `Edit > Preferences`, navigate to the `System` tab, and look for the `User extensions` field.
 - Restart Inkscape.
 
 _The scripts are tested and developed for Inkscape `v1.2.2`._

@@ -3,13 +3,13 @@
 """
 Spine export for Inkscape
 
-Export each of [selected objects/visible layers] in the current document to individual PNG file
+Export each of [selected objects/visible layers] in the current document to an individual PNG file
 and generate a Spine JSON file to import.
 https://esotericsoftware.com/spine-json-format
 
 Changelog:
 v1.0.0 @metaphore
-    - The old "InkscapeToSpine" script code updated to Inkscape 1.3.0 and optimized.
+    - The old "InkscapeToSpine" script code was updated to Inkscape 1.3.0 and optimized.
     - Dropped support for existing Skeleton JSON merge from the original script.
     - Option to choose between export from "visible layers" and "selected objects".
     - Support for name prefix and sub-dir structure of each individual image.
@@ -98,7 +98,7 @@ class SpineExporter(inkex.EffectExtension):
             "--compact-names",
             type=inkex.Boolean,
             dest="compact_names",
-            help="Slots and attachments will be shorten",
+            help="Slots and attachments will be shortened",
         )
 
     # Prevent the original document modification.
@@ -107,23 +107,22 @@ class SpineExporter(inkex.EffectExtension):
 
     def effect(self):
         # Delete all the invisible nodes in the document.
-        # This is required, due to node's rendering clips off the hidden sub-nodes.
+        # This is required, due to the node's rendering clips off the hidden sub-nodes.
         # But the Inkex's bounding box still includes the hidden sub-nodes.
         self.delete_invisible_children(self.svg)
 
         export_mode = self.options.export_mode
-        match export_mode:
+        
+        if export_mode == self.mode_selected_objects:
+            nodes = self.collect_selected_nodes()
+            self.export_nodes(nodes)
 
-            case self.mode_selected_objects:
-                nodes = self.collect_selected_nodes()
-                self.export_nodes(nodes)
+        elif export_mode == self.mode_visible_layers:
+            nodes = self.collect_layers()
+            self.export_nodes(nodes)
 
-            case self.mode_visible_layers:
-                nodes = self.collect_layers()
-                self.export_nodes(nodes)
-
-            case _:
-                raise NotImplementedError("Unexpected export mode: " + export_mode)
+        else:
+            raise NotImplementedError("Unexpected export mode: " + export_mode)
 
     def collect_layers(self) -> list[IBaseElement]:
         xpath = "./svg:g[@inkscape:groupmode='layer']"
@@ -178,9 +177,9 @@ class SpineExporter(inkex.EffectExtension):
             if bbox is None:
                 continue
 
-            # Inkscape uses the "inkscape:label" attribute for display name
+            # Inkscape uses the "inkscape:label" attribute to display the name
             # (the one you see and edit in the "Layers and Objects" window).
-            # If the label is missing, fallback to the mandatory "id" attribute instead.
+            # If the label is missing, fall back to the mandatory "id" attribute instead.
             node_name = node.label
             if node_name is None or str(node_name).isspace():
                 node_name = node.get_id()
@@ -338,8 +337,8 @@ class SpineExporter(inkex.EffectExtension):
     @staticmethod
     def center_skel_content(skel_struct):
         # For now as we keep things simple, the image attachment translation is not a big deal,
-        # but later if we add support for other Spine type (e.g. paths or meshes)
-        # we would need to come up with a much more sophisticated approach of centering the content.
+        # but later if we add support for other Spine types (e.g. paths or meshes)
+        # we would need to come up with a much more sophisticated approach for centering the content.
 
         slot_list = skel_struct["skins"][0]["attachments"]
 

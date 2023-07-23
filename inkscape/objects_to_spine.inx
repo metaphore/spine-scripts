@@ -19,26 +19,20 @@
             <param name="compact-names" type="boolean" gui-text="Compact names">true</param>
         </page>
         <page name="about_tab" gui-text="About">
-            <label appearance="header">Objects to Spine Exporter</label>
-            <label>Export each of [selected objects/visible layers] in the current document to individual PNG file
-                and generate a Spine JSON file to import.
+            <label appearance="header">Objects to Spine Exporter v1.0.0</label>
+            <label>
+                Export individual SVG objects as PNG images and generate a Spine JSON file.
             </label>
-            <label>The generated images are placed under the "images" sub-folder of the "Output directory" location.
+            <label>
+                For help and parameter details, please see the README file by the link below.
+                If you encountered a bug or want to propose a feature, please open an issue on GitHub.
             </label>
-            <label>The "Image prefix" field allows to define further sub-dir structure for the output images.
-                For example, the "characters/dog/" value would make the exporter to place all the images under
-                "{Output directory}/images/characters/dog/*.png"
+            <label appearance="url">
+                https://github.com/EsotericSoftware/spine-scripts/tree/master/inkscape
             </label>
-            <label>The "Compact names" switch, makes it possible to
-                have short slot and attachment names in the exported JSON file.
-                Imagine you have an object with the ID "head" as part of your export.
-                If you configure the "Images prefix" to be "characters/dog/",
-                then the output image would be exported to "images/characters/dog/head.png".
-                In that case the name of the generated slot and attachment would be "characters/dog/head".
-                To make the exported Skeleton to look a bit cleaner, it's recommended to set the
-                "Compact names" option. When switched on, the corresponding slot and the attachment would be named just "head",
-                and the full path to the image would be added to the "path" property of the attachment.
-
+            <label>or open a discussion on the offical Spine forum</label>
+            <label appearance="url">
+                https://en.esotericsoftware.com/forum/
             </label>
         </page>
     </param>

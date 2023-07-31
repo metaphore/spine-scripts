@@ -21,7 +21,7 @@ v1.0 @metaphore
 """
 
 import os
-
+import re
 import inkex
 import json
 
@@ -107,7 +107,7 @@ class SpineExporter(inkex.EffectExtension):
         self.delete_invisible_children(self.svg)
 
         export_mode = self.options.export_mode
-        
+
         if export_mode == self.mode_selected_objects:
             nodes = self.collect_selected_nodes()
             self.export_nodes(nodes)
@@ -181,6 +181,8 @@ class SpineExporter(inkex.EffectExtension):
             if node_name is None or str(node_name).isspace():
                 node_name = node.get_id()
 
+            node_name, obj_tags = self.resolve_object_tags(node_name)
+
             full_name = node_name
             if image_prefix and not image_prefix.isspace():
                 full_name = image_prefix + full_name
@@ -209,7 +211,8 @@ class SpineExporter(inkex.EffectExtension):
                 attach_name = os.path.splitext(os.path.basename(image_file))[0]
                 # Remove the ".png" extension.
                 attach_path = os.path.relpath(image_file, images_dir)[:-4].replace("\\", "/")
-            slot_name = attach_name
+
+            slot_name = self.resolve_slot_name(attach_name, obj_tags)
 
             self.register_image_attachment(skel_struct, slot_name, attach_name, attach_path, bbox)
 
@@ -243,6 +246,22 @@ class SpineExporter(inkex.EffectExtension):
         height = self.svg.viewport_height
         return width, height
 
+    def get_bounding_box(self, node: BaseElement) -> tuple[float, float, float, float] | None:
+        transform = None
+        parent = node.getparent()
+        if parent is not None:
+            transform = parent.composed_transform()
+        bounding_box = node.bounding_box(transform)
+
+        if bounding_box is None:
+            return None
+
+        x = round(self.svg.uutounit(bounding_box.x.minimum))
+        y = round(self.svg.uutounit(bounding_box.y.minimum))
+        width = round(self.svg.uutounit(bounding_box.width))
+        height = round(self.svg.uutounit(bounding_box.height))
+        return x, y, width, height
+
     def coords_to_spine(self, left, top, width, height) -> tuple[float, float, float, float]:
         global_width, global_height = self.get_canvas_size()
         bottom = height + top
@@ -259,7 +278,7 @@ class SpineExporter(inkex.EffectExtension):
         # Find existing or create a new slot.
         slot = self.find_named_elem(skel_struct["slots"], slot_name)
         if not slot:
-            slot = slot = {
+            slot = {
                 "name": slot_name,
                 "attachment": attach_name,
                 "bone": "root",
@@ -301,22 +320,35 @@ class SpineExporter(inkex.EffectExtension):
             else:
                 SpineExporter.delete_invisible_children(child_node)
 
-    # @staticmethod
-    def get_bounding_box(self, node: BaseElement) -> tuple[float, float, float, float] | None:
-        transform = None
-        parent = node.getparent()
-        if parent is not None:
-            transform = parent.composed_transform()
-        bounding_box = node.bounding_box(transform)
+    @staticmethod
+    def resolve_object_tags(obj_name: str) -> tuple[str, list[str]]:
+        tag_pattern = r'\[[^\]]*\]'
 
-        if bounding_box is None:
-            return None
+        object_tags = re.findall(tag_pattern, obj_name)
+        if len(object_tags) == 0:
+            return obj_name, []
 
-        x = round(self.svg.uutounit(bounding_box.x.minimum))
-        y = round(self.svg.uutounit(bounding_box.y.minimum))
-        width = round(self.svg.uutounit(bounding_box.width))
-        height = round(self.svg.uutounit(bounding_box.height))
-        return x, y, width, height
+        # Trim brackets from the tag content.
+        for i, tag in enumerate(object_tags):
+            object_tags[i] = tag[1:-1]
+
+        # Clean the name from tags.
+        obj_name = re.sub(tag_pattern, '', obj_name).strip()
+
+        return obj_name, object_tags
+
+    @staticmethod
+    def resolve_slot_name(attach_name: str, object_tags: list[str]) -> str:
+        if len(object_tags) == 0:
+            return attach_name
+
+        for tag in object_tags:
+            if tag.startswith("slot:"):
+                slot_name = tag[5:].strip()
+                if slot_name:
+                    return slot_name
+
+        return attach_name
 
     @staticmethod
     def find_named_elem(array: list, name):

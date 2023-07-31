@@ -152,7 +152,7 @@ class SpineExporter(inkex.EffectExtension):
     def export_nodes(self, nodes: list[BaseElement]):
         image_prefix = self.options.image_prefix
         if image_prefix:
-            image_prefix = image_prefix.replace("\\", "/")
+            image_prefix = image_prefix.replace("\\", "/").strip()
 
         output_dir = os.path.expanduser(self.options.outdir)
         images_dir = os.path.join(output_dir, "images")
@@ -184,7 +184,7 @@ class SpineExporter(inkex.EffectExtension):
             node_name, obj_tags = self.resolve_object_tags(node_name)
 
             full_name = node_name
-            if image_prefix and not image_prefix.isspace():
+            if image_prefix:
                 full_name = image_prefix + full_name
 
             image_file = os.path.join(images_dir, "%s.png" % full_name)
